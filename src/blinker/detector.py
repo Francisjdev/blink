@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+from src.notifier.notifier import notify_message
 import numpy as np
 from src.utils.time_utils import get_timestamp
 
@@ -65,6 +66,7 @@ def blink_detection():
                         "ear": average_ear,
                     }
                     print(payload)
+                    notify_message(payload)
                 elif (average_ear >= BLINK_TRESHOLD) and not eyes_open:
                     eyes_open = True
                 else:
