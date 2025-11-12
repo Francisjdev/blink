@@ -1,5 +1,5 @@
-from src.utils.time_utils import get_timestamp, get_elapsed_time
 from src.notifier.whatsapp_sender import send_whatsapp_message
+from src.utils.time_utils import get_elapsed_time, get_timestamp
 
 time_holder = []
 
@@ -17,6 +17,8 @@ def notify_message(payload):
 
             time_holder.clear()
         else:
-            elapse_time = get_elapsed_time(time_holder[0], get_timestamp())
+            elapse_time = get_elapsed_time(
+                time_holder[0], get_timestamp()
+            ).total_seconds()
             if elapse_time >= 1:
                 time_holder.pop(0)

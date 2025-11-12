@@ -1,7 +1,8 @@
 import cv2
 import mediapipe as mp
-from src.notifier.notifier import notify_message
 import numpy as np
+
+from src.notifier.notifier import notify_message
 from src.utils.time_utils import get_timestamp
 
 
@@ -13,21 +14,21 @@ def calculate_eye_aspect_ratio(eye_points):
     return (vertical_1 + vertical_2) / (2 * horizontal)
 
 
-# Initialize webcam
-camera = cv2.VideoCapture(0)
+def run_blink_detector():
+    # Initialize webcam
+    camera = cv2.VideoCapture(0)
 
-# Mediapipe Face Mesh setup
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh_detector = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1)
+    # Mediapipe Face Mesh setup
+    mp_face_mesh = mp.solutions.face_mes  # type: ignore
+    face_mesh_detector = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1)
 
-# Landmark indices for eyes (based on Mediapipe face mesh model)
-LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144]
-RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380]
-BLINK_TRESHOLD = 0.15
+    # Landmark indices for eyes (based on Mediapipe face mesh model)
+    LEFT_EYE_INDICES = [33, 160, 158, 133, 153, 144]
+    RIGHT_EYE_INDICES = [362, 385, 387, 263, 373, 380]
+    BLINK_TRESHOLD = 0.15
 
-
-def blink_detection():
     eyes_open = True
+
     while True:
         success, frame = camera.read()
         if not success:
@@ -38,8 +39,7 @@ def blink_detection():
         frame_for_detection = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         face_landmarks_data = face_mesh_detector.process(frame_for_detection)
 
-        left_eye_points = []
-        right_eye_points = []
+        left_eye_points, right_eye_points = [], []
 
         if face_landmarks_data.multi_face_landmarks:
             for face_landmarks in face_landmarks_data.multi_face_landmarks:
@@ -58,6 +58,7 @@ def blink_detection():
                 right_ear = calculate_eye_aspect_ratio(right_eye_points)
                 average_ear = (left_ear + right_ear) / 2
                 print("EAR:", round(average_ear, 3))
+
                 if average_ear < BLINK_TRESHOLD and eyes_open:
                     eyes_open = False
                     payload = {
@@ -67,15 +68,8 @@ def blink_detection():
                     }
                     print(payload)
                     notify_message(payload)
-                elif (average_ear >= BLINK_TRESHOLD) and not eyes_open:
+                elif average_ear >= BLINK_TRESHOLD and not eyes_open:
                     eyes_open = True
-                else:
-                    payload = {
-                        "blink_detected": False,
-                        "timestamp": None,
-                        "ear": average_ear,
-                    }
-                    print(payload)
 
         cv2.imshow("Blink Detector - Debug View", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -83,6 +77,3 @@ def blink_detection():
 
     camera.release()
     cv2.destroyAllWindows()
-
-
-blink_detection()
